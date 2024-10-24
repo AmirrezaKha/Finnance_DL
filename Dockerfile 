@@ -1,0 +1,28 @@
+# Dockerfile
+
+# Use an official R image
+FROM rocker/r-ver:4.2.2
+
+# Install system dependencies for R packages
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libmagick++-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy the R scripts and other necessary files
+COPY ./scripts ./scripts
+COPY ./.env ./.env
+COPY ./requirements.txt ./
+
+# Install R packages
+RUN R -e "install.packages('remotes')"
+RUN R -e "remotes::install_cran('$(cat requirements.txt | tr '\n' ',')')"
+
+# Run the main script
+CMD ["Rscript", "main.R"]

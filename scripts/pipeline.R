@@ -1,30 +1,26 @@
 # pipeline.R
 
+# Source data loading and visualization scripts
 source('scripts/data_loading.R')
 source('scripts/visualizer.R')
 
-run_pipeline <- function(financial_data_file, ocr_data_file, ocr_image_file) {
+# Define the main pipeline function
+run_pipeline <- function() {
+  cat("Starting pipeline...\n")
   
-  # Load datasets
-  financial_data <- load_csv_data(financial_data_file)
-  ocr_data <- load_csv_data(ocr_data_file)
+  # Step 1: Load the Kaggle dataset
+  financial_data <- load_kaggle_data()
   
-  # Load image
-  ocr_image <- load_image(ocr_image_file)
+  # Step 2: Load the Hugging Face dataset
+  ocr_data <- load_huggingface_data()
   
-  # Visualize the financial data
-  visualize_data_structure(financial_data, "Financial Document Dataset")
+  # Step 3: Load an image file (hardcoded or parameterized in future)
+  ocr_image <- load_image("data/ocr_image_sample.png")  # Dummy image, can be replaced
   
-  # Visualize the OCR data
-  visualize_data_structure(ocr_data, "OCR Dataset")
+  # Step 4: Visualize data and image
+  visualize_data_structure(financial_data, "Financial Dataset (Kaggle)")
+  visualize_data_structure(ocr_data, "OCR Dataset (Hugging Face)")
+  visualize_image(ocr_image, "Sample OCR Image")
   
-  # Visualize the OCR image
-  visualize_image(ocr_image, "OCR Image")
-  
-  # Continue with other steps like preprocessing, feature engineering, training models, etc.
-  # Preprocessing and model steps would go here
-  # ...
+  cat("\nPipeline completed successfully.\n")
 }
-
-# Example usage (this will be called in the main script):
-# result <- run_pipeline('data/financial_dataset.csv', 'data/ocr_dataset.csv', 'images/ocr_image_1.png')

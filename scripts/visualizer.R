@@ -1,31 +1,48 @@
 # visualizer.R
 
-library(ggplot2)
-library(magick)
+library(ggplot2)     # For data visualization
+library(magick)      # For image manipulation
 
-# Visualize the structure and basic information of the dataset
-visualize_data_structure <- function(data, dataset_name) {
-  cat("\n", dataset_name, "Structure:\n")
-  str(data)
-  cat("\nNumber of Rows in", dataset_name, ":", nrow(data))
-  cat("\nNumber of Columns (Features) in", dataset_name, ":", ncol(data))
-  cat("\n\nPreview of", dataset_name, ":\n")
+# Function to visualize the structure of text data
+visualize_text_data_structure <- function(data, title) {
+  cat("\nVisualizing text data structure for:", title, "\n")
+  
+  # Print structure of the dataset
+  print(str(data))  
+  
+  # Print the first few rows to understand the data
   print(head(data))
+  
+  # Show number of samples and unique labels (if applicable)
+  cat("\nNumber of samples in", title, ":", nrow(data), "\n")
+  
+  if ("label" %in% colnames(data)) {
+    cat("Unique labels in", title, ":", length(unique(data$label)), "\n")
+  }
 }
 
-# Function to visualize an image
-visualize_image <- function(image, image_name) {
-  cat("\nDisplaying image:", image_name, "\n")
-  image_info(image)
+# Function to visualize images
+visualize_images <- function(images, title) {
+  cat("\nDisplaying images for:", title, "\n")
   
-  # Display the original image
-  print(image)
+  # Display basic information about images
+  cat("Number of images:", length(images), "\n")
   
-  # Convert to grayscale and display
-  gray_image <- image_convert(image, colorspace = 'gray')
-  print(gray_image)
+  # Print information about the first image
+  if (length(images) > 0) {
+    image_info <- image_info(images[[1]])
+    cat("Image details (first image):\n")
+    print(image_info)
+  }
+  
+  # Plot the first few images
+  if (length(images) > 0) {
+    gridExtra::grid.arrange(grobs = images[1:min(4, length(images))], ncol = 2)
+  }
 }
 
-# Example Usage (these will be called in the pipeline):
-# visualize_data_structure(financial_data, "Financial Document Dataset")
-# visualize_image(ocr_image, "OCR Image 1")
+# General function to visualize both datasets
+visualize_datasets <- function(images, text_data, title) {
+  visualize_images(images, paste(title, "Images"))
+  visualize_text_data_structure(text_data, paste(title, "Text Data"))
+}

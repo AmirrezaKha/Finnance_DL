@@ -1,0 +1,8 @@
+services:
+  r_project:
+    build: .
+    volumes:
+      - ./data:/usr/src/app/data
+      - ./images:/usr/src/app/images
+    env_file: .env
+    command: Rscript main.R
