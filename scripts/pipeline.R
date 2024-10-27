@@ -10,7 +10,7 @@ run_pipeline <- function() {
     financial_data <- load_kaggle_data()
 
     # Step 2: Load the new Kaggle financial news dataset
-    news_data <- load_huggingface_data()
+    news_data <- load_kaggle_financial_news()
 
     # Step 3: Define the image directory and CSV file path
     image_directory <- "data/"  # Directory where image folders are located

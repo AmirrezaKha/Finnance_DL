@@ -19,13 +19,21 @@ load_kaggle_data <- function() {
     return(images)
 }
 
-# Function to load the new Kaggle financial news dataset
-load_huggingface_data <- function() {
-    # Assuming that you are downloading this via the same Kaggle API
-    # Replace with the correct command if using Hugging Face API in the future
-    system('kaggle datasets download -d sayelabualigah/high-quality-financial-news-dataset-for-nlp-tasks -p data/ --unzip')
-    cat("Downloaded Kaggle financial news dataset to 'data/' directory\n")
+# Function to load the Kaggle financial news dataset using kagglehub
+load_kaggle_financial_news <- function() {
+    # Import the kagglehub library in your script using reticulate
+    library(reticulate)
+    
+    # Import kagglehub from Python
+    kagglehub <- import("kagglehub")
+    
+    # Use the kagglehub function to download the dataset
+    path <- kagglehub$dataset_download("ankurzing/sentiment-analysis-for-financial-news")
+    
+    # Print the path to where the dataset is downloaded
+    cat("Path to dataset files:", path, "\n")
 }
+
 
 # Function to load image files from a given path
 load_image <- function(image_path) {

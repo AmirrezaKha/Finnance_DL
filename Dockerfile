@@ -11,14 +11,14 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Kaggle API using pip
-RUN pip install kaggle
+# Install Kaggle API and kagglehub using pip
+RUN pip install kaggle kagglehub
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Install R packages including remotes, magick, ggplot2, gridExtra, dplyr, readr
-RUN R -e "install.packages(c('remotes', 'magick', 'ggplot2', 'gridExtra', 'dplyr', 'readr'))"
+# Install R packages including reticulate, remotes, magick, ggplot2, gridExtra, dplyr, readr
+RUN R -e "install.packages(c('reticulate', 'remotes', 'magick', 'ggplot2', 'gridExtra', 'dplyr', 'readr'))"
 
 # Copy the R scripts and other necessary files
 COPY ./main.R ./main.R
