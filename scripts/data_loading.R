@@ -1,42 +1,36 @@
 library(magick)  # For image loading
 
-# Function to load the Kaggle financial document image dataset using the Python 'kaggle' API
-load_kaggle_data <- function() {
-    if (!dir.exists("data")) {
-        dir.create("data")
-    }
-
-    # Use system call to download the Kaggle dataset using Python API
-    system('kaggle datasets download -d mehaksingal/personal-financial-dataset-for-india -p data/ --unzip')
-    cat("Downloaded Kaggle dataset to 'data/' directory\n")
-
-    # Load image files from the 'data/' folder
-    image_files <- list.files("data", pattern = "\\.(png|jpg|jpeg)$", full.names = TRUE)
-
-    # Load all images using magick
-    images <- lapply(image_files, image_read)
-
-    return(images)
-}
-
 # Function to load the Kaggle financial news dataset using kagglehub
-load_kaggle_financial_news <- function() {
-    # Import the kagglehub library in your script using reticulate
+load_kaggle_financial_news <- function(save_dir = "data") {
+    # Import the reticulate library to interface with Python
     library(reticulate)
     
-    # Import kagglehub from Python
+    # Ensure the save directory exists
+    if (!dir.exists(save_dir)) {
+        dir.create(save_dir, recursive = TRUE)
+    }
+    
+    # Import kagglehub Python module using reticulate
     kagglehub <- import("kagglehub")
     
-    # Use the kagglehub function to download the dataset
-    path <- kagglehub$dataset_download("ankurzing/sentiment-analysis-for-financial-news")
+    # Download the dataset
+    cat("Downloading dataset from Kaggle...\n")
+    dataset_path <- kagglehub$dataset_download("clovisdalmolinvieira/news-sentiment-analysis")
     
-    # Print the path to where the dataset is downloaded
-    cat("Path to dataset files:", path, "\n")
-}
-
-
-# Function to load image files from a given path
-load_image <- function(image_path) {
-    image <- image_read(image_path)
-    return(image)
+    # Define the target path to save the dataset
+    csv_files <- list.files(dataset_path, pattern = "\\.csv$", full.names = TRUE)
+    if (length(csv_files) == 0) {
+        stop("No CSV files found in the downloaded dataset.")
+    }
+    
+    # Move the CSV file to the save directory
+    saved_paths <- sapply(csv_files, function(file) {
+        target_path <- file.path(save_dir, basename(file))
+        file.copy(file, target_path, overwrite = TRUE)
+        target_path
+    })
+    
+    # Print and return the paths to the saved CSV files
+    cat("Dataset files saved to:\n", paste(saved_paths, collapse = "\n"), "\n")
+    return(saved_paths)
 }

@@ -1,13 +1,67 @@
 # visualizer.R
 
 # Load required libraries
-library(ggplot2)     # For data visualization
-library(magick)      # For image manipulation
-library(gridExtra)   # For arranging multiple grobs
-library(grid)        # For using rasterGrob
+library(ggplot2)
+library(magick)
+library(gridExtra)
+library(grid)
+library(dplyr)
+library(readr)
 
-# Function to visualize the structure of text data
-visualize_text_data_structure <- function(data, title) {
+# Function to compute descriptive statistics for a multilabel dataset
+compute_multilabel_stats <- function(data, output_file = NULL) {
+    cat("\n--- Dataset Statistics ---\n")
+    
+    # Number of rows and features
+    num_rows <- nrow(data)
+    num_features <- ncol(data)
+    cat("Number of rows:", num_rows, "\n")
+    cat("Number of features (columns):", num_features, "\n")
+    
+    # Assuming labels are in columns (e.g., one-hot encoded or binary multilabel format)
+    label_columns <- names(data)[!sapply(data, is.numeric)]
+    num_labels <- length(label_columns)
+    cat("Number of labels:", num_labels, "\n")
+    
+    # Unique classes per label
+    label_stats <- sapply(data[label_columns], function(col) length(unique(col)))
+    min_classes <- min(label_stats)
+    max_classes <- max(label_stats)
+    avg_classes <- mean(label_stats)
+    cat("Min classes per label:", min_classes, "\n")
+    cat("Max classes per label:", max_classes, "\n")
+    cat("Average classes per label:", round(avg_classes, 2), "\n")
+    
+    # Labels per instance (number of non-zero or non-empty entries per row in label columns)
+    labels_per_instance <- rowSums(data[label_columns] != 0)
+    min_labels <- min(labels_per_instance)
+    max_labels <- max(labels_per_instance)
+    avg_labels <- mean(labels_per_instance)
+    cat("Min labels per instance:", min_labels, "\n")
+    cat("Max labels per instance:", max_labels, "\n")
+    cat("Average labels per instance:", round(avg_labels, 2), "\n")
+    
+    # Collect all stats in a table
+    stats <- data.frame(
+        Metric = c("Number of rows", "Number of features", "Number of labels",
+                   "Min classes per label", "Max classes per label", "Average classes per label",
+                   "Min labels per instance", "Max labels per instance", "Average labels per instance"),
+        Value = c(num_rows, num_features, num_labels,
+                  min_classes, max_classes, avg_classes,
+                  min_labels, max_labels, avg_labels)
+    )
+    
+    # Save statistics to a CSV file if output_file is provided
+    if (!is.null(output_file)) {
+        write_csv(stats, output_file)
+        cat("\nStatistics saved to", output_file, "\n")
+    }
+    
+    return(stats)
+}
+
+# Function to visualize text data structure and descriptive statistics
+visualize_text_data_structure <- function(data, title, output_file = NULL) {
     cat("\nVisualizing text data structure for:", title, "\n")
     
     # Print structure of the dataset
@@ -16,53 +70,19 @@ visualize_text_data_structure <- function(data, title) {
     # Print the first few rows to understand the data
     print(head(data))
     
-    # Show number of samples and unique labels (if applicable)
+    # Show number of samples
     cat("\nNumber of samples in", title, ":", nrow(data), "\n")
     
-    if ("label" %in% colnames(data)) {
-        cat("Unique labels in", title, ":", length(unique(data$label)), "\n")
-    }
-}
-
-# Function to visualize images
-visualize_images <- function(image_directory, title, max_images = 10) {
-    cat("\nDisplaying images for:", title, "\n")
-
-    image_folders <- list.dirs(image_directory, full.names = TRUE, recursive = FALSE)
-
-    for (folder in image_folders) {
-        cat("Folder:", basename(folder), "- Number of images:", length(list.files(folder, pattern = "\\.(png|jpg|jpeg|webp)$")), "\n")
-
-        # Limit the number of images loaded
-        image_files <- list.files(folder, pattern = "\\.(png|jpg|jpeg|webp)$", full.names = TRUE)
-        image_files <- image_files[1:min(max_images, length(image_files))]  # Load only up to 'max_images'
-        images <- lapply(image_files, image_read)
-
-        cat("Number of images:", length(images), "\n")
-
-        if (length(images) > 0) {
-            image_info <- image_info(images[[1]])
-            cat("Image details (first image):\n")
-            print(image_info)
-
-            # Create ggplot objects for the first few images
-            ggplots <- lapply(images, function(img) {
-                ggplot() + 
-                  annotation_custom(rasterGrob(as.raster(img)), xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
-                  theme_void()
-            })
-            gridExtra::grid.arrange(grobs = ggplots, ncol = 2)
-        }
-    }
+    # Compute and display descriptive statistics
+    stats <- compute_multilabel_stats(data, output_file)
+    
+    return(stats)
 }
 
 # General function to visualize both datasets
-visualize_datasets <- function(image_directory, text_data_path) {
+visualize_datasets <- function(text_data_path) {
     # Load text data from CSV
     text_data <- read.csv(text_data_path)
-    
-    # Visualize images
-    visualize_images(image_directory, "Image Data")
     
     # Visualize text data structure
     visualize_text_data_structure(text_data, "Text Data")
