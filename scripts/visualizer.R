@@ -61,7 +61,7 @@ compute_multilabel_stats <- function(data, output_file = NULL) {
 }
 
 # Function to visualize text data structure and descriptive statistics
-visualize_text_data_structure <- function(data, title, output_file = NULL) {
+visualize_text_data_structure <- function(data, title, output_file = "output.csv") {
     cat("\nVisualizing text data structure for:", title, "\n")
     
     # Print structure of the dataset
