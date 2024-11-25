@@ -6,5 +6,6 @@ services:
       - ./data:/usr/src/app/data
       - ./images:/usr/src/app/images
       - ./main.R:/usr/src/app/main.R
+      - ./output:/usr/src/app/output
     env_file: .env
     command: Rscript main.R
