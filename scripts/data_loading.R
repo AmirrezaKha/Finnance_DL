@@ -1,4 +1,10 @@
+if(!require(magick)) install.packages("magick")
 library(magick)  # For image loading
+
+if(!require(reticulate)) install.packages("reticulate")
+
+#py_install("kagglehub")
+
 
 # Function to load the Kaggle financial news dataset using kagglehub
 load_kaggle_financial_news <- function(save_dir = "data") {
@@ -12,6 +18,7 @@ load_kaggle_financial_news <- function(save_dir = "data") {
     
     # Import kagglehub Python module using reticulate
     kagglehub <- import("kagglehub")
+    # ToDO: is this actually needed, why not just load the dataset directly?
     
     # Download the dataset
     cat("Downloading dataset from Kaggle...\n")
