@@ -18,7 +18,7 @@ RUN pip install kaggle kagglehub
 WORKDIR /usr/src/app
 
 # Install R packages including reticulate, remotes, magick, ggplot2, gridExtra, dplyr, readr
-RUN R -e "install.packages(c('reticulate', 'remotes', 'magick', 'ggplot2', 'gridExtra', 'dplyr', 'readr'))"
+RUN R -e "install.packages(c('reticulate', 'remotes', 'magick', 'ggplot2', 'gridExtra', 'dplyr', 'readr', 'text2vec', 'tidyverse', 'text', 'data.table', 'tidytext'))"
 
 # Copy the R scripts and other necessary files
 COPY ./main.R ./main.R
