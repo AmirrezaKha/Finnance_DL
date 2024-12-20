@@ -8,56 +8,78 @@ library(tidytext)
 
 # Define the feature engineering function
 feature_engineering <- function(text_file_path, embedding_path) {
-  cat("Loading data from the provided text file...\n")
-  data <- read.csv(text_file_path, stringsAsFactors = FALSE)
-  
-  if (!"Description" %in% colnames(data)) {
-    stop("Error: 'Description' column is not found in the input file. Please provide a valid input file.")
-  }
-  
-  cat("Extracting and preprocessing the 'Description' column...\n")
-  text_data <- data$Description
+# Load data
+cat("Loading data from the provided text file...\n")
+data <- read.csv(text_file_path, stringsAsFactors = FALSE)
 
-  # Tokenization and preprocessing
-  cat("Tokenizing and cleaning text data...\n")
-  tokenize <- function(text) {
-    tolower(text) %>%
-      gsub("[^a-z\\s]", "", .) %>%
-      strsplit("\\s+") %>%
-      unlist()
+if (!"Description" %in% colnames(data)) {
+  stop("Error: 'Description' column is not found in the input file. Please provide a valid input file.")
+}
+
+cat("Extracting and preprocessing the 'Description' column...\n")
+text_data <- data$Description
+
+# Tokenization and preprocessing
+cat("Tokenizing and cleaning text data...\n")
+tokenize <- function(text) {
+  text %>%
+    tolower() %>%                     # Convert to lowercase
+    gsub("[^a-z\\s]", " ", .) %>%     # Replace non-alphabetic characters with a space
+    gsub("\\s+", " ", .) %>%          # Replace multiple spaces with a single space
+    trimws() %>%                      # Trim leading/trailing spaces
+    strsplit(" ") %>%                 # Split on space
+    unlist()                          # Flatten to vector
+}
+
+tokens <- lapply(text_data, tokenize)
+
+# Create an 'itoken' object from the list of tokens
+cat("Creating 'itoken' object...\n")
+itoken_object <- itoken(tokens, progressbar = TRUE)
+
+# Creating vocabulary and Term-Document Matrix (TDM)
+cat("Creating vocabulary and Term-Document Matrix (TDM)...\n")
+vocab <- create_vocabulary(itoken_object)
+
+vectorizer <- vocab_vectorizer(vocab)
+tdm <- create_dtm(itoken_object, vectorizer)
+cat("TDM dimensions (rows, columns):", dim(tdm), "\n")
+
+# Load pre-trained word embeddings
+cat("Loading pre-trained word embeddings...\n")
+embeddings <- fread(embedding_path, header = FALSE, data.table = FALSE, quote = "")
+word_vectors <- as.matrix(embeddings[, -1])
+rownames(word_vectors) <- embeddings[, 1]
+cat("Word embeddings dimensions (rows, columns):", dim(word_vectors), "\n")
+
+# Check overlap between TDM and word vectors
+overlap <- intersect(colnames(tdm), rownames(word_vectors))
+cat("Number of overlapping words between TDM and word vectors:", length(overlap), "\n")
+
+# Fallback vector for rows without valid words
+fallback_vector <- colMeans(word_vectors, na.rm = TRUE)
+
+# Calculate sentence embeddings
+cat("Calculating sentence embeddings by averaging word vectors...\n")
+sentence_embeddings <- t(apply(as.matrix(tdm), 1, function(row) {
+  words <- colnames(tdm)[row > 0]
+  valid_words <- words[words %in% rownames(word_vectors)]
+  
+  if (length(valid_words) > 0) {
+    valid_vectors <- word_vectors[valid_words, , drop = FALSE]
+    colMeans(valid_vectors)
+  } else {
+    cat("No valid words found. Using fallback vector.\n")
+    fallback_vector
   }
-  tokens <- lapply(text_data, tokenize)
-  
-  # Create an 'itoken' object from the list of tokens
-  itoken_object <- itoken(tokens, progressbar = TRUE)
-  
-  cat("Creating vocabulary and Term-Document Matrix (TDM)...\n")
-  vocab <- create_vocabulary(itoken_object)
-  vectorizer <- vocab_vectorizer(vocab)
-  tdm <- create_dtm(itoken_object, vectorizer)
-  
-  # Feature 1: Word embeddings (e.g., GloVe)
-  cat("Loading pre-trained word embeddings...\n")
-  embeddings <- fread(embedding_path, header = FALSE, data.table = FALSE, quote = "")
-  word_vectors <- as.matrix(embeddings[, -1])
-  rownames(word_vectors) <- embeddings[, 1]
-  
-  cat("Calculating sentence embeddings by averaging word vectors...\n")
-  sentence_embeddings <- t(apply(as.matrix(tdm), 1, function(row) {
-    words <- colnames(tdm)[row > 0]
-    valid_words <- words[words %in% rownames(word_vectors)]
-    
-    if (length(valid_words) > 0) {
-      valid_vectors <- word_vectors[valid_words, , drop = FALSE]
-      colMeans(valid_vectors)
-    } else {
-      rep(0, ncol(word_vectors))
-    }
-  }))
-  
-  cat("Adding sentence embeddings to the data...\n")
-  embedding_cols <- paste0("embedding_", seq_len(ncol(sentence_embeddings)))
-  data <- cbind(data, setNames(as.data.frame(sentence_embeddings), embedding_cols))
+}))
+
+
+# Add sentence embeddings to the data
+cat("Adding sentence embeddings to the data...\n")
+embedding_cols <- paste0("embedding_", seq_len(ncol(sentence_embeddings)))
+data <- cbind(data, setNames(as.data.frame(sentence_embeddings), embedding_cols))
+
   
   # Feature 2: Text length
   cat("Calculating text length feature...\n")
