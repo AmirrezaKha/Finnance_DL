@@ -1,0 +1,41 @@
+name: R Project CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main       # Trigger on pushes to the main branch
+  pull_request:
+    branches:
+      - main       # Trigger on pull requests to the main branch
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Set up Docker
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      # Build the Docker container
+      - name: Build Docker Image
+        run: docker build -t r_project:latest .
+
+      # Run the R script inside the container
+      - name: Run R Script
+        run: docker run --rm -v ${{ github.workspace }}/data:/usr/src/app/data \
+                              -v ${{ github.workspace }}/images:/usr/src/app/images \
+                              -e ENV_FILE=.env \
+                              r_project:latest
+
+  deploy:
+    needs: build-and-run
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy (Optional)
+        run: echo "Add deployment steps here..."

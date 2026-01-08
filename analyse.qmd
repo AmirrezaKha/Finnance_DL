@@ -1,0 +1,74 @@
+
+
+
+
+# News Sentiment Dataset
+```{r}
+#| echo: false
+#| warning: false
+library(dplyr)
+
+data <- read.csv("data/news_sentiment_analysis.csv", sep = ",", header = TRUE)
+tab0 <- table(data$Sentiment)
+```	
+
+
+The dataset contains two labels: Type and Sentiment. The Type label includes the categories "Business," "Entertainment," "General," "Health," "Science," "Sports," and "Technology," each occurring 500 times in the dataset. On the other hand, the Sentiment label includes the categories "Negative," "Neutral," and "Positive." The "Positive" sentiment is the most frequent, with `r tab0[["positive"]]` occurrences, followed by "Neutral" with `r tab0[["neutral"]]` occurrences.
+
+
+Overall there are `r nrow(data)` rows in the dataset. The following table shows the distribution of the Sentiment label across the Type label.
+```{r}
+#| echo: false
+#| warning: false
+
+tab1 <- table(data$Type, data$Sentiment)
+tab1_m <- matrix(tab1, ncol = 3, byrow = FALSE)
+library(gt)
+library(dplyr)
+tab1_df <- as.data.frame(tab1_m)
+
+chi_test <- chisq.test(tab1)
+prop_tab1 <- prop.table(tab1, margin = 1)
+
+if(!require(glue)) install.packages("glue")
+library(glue)
+
+knitr::kable(
+    prop_tab1, 
+    caption = glue(
+        "Chi-squared test: {round(chi_test$statistic, 2)} (p-value {format.pval(chi_test$p.value, digits = 2, eps = 0.01)})"
+    )
+)
+
+
+entropy <- function(vec) {
+  probs <- table(vec) / length(vec)
+  -sum(probs * log2(probs))
+}
+joint_entropy <- function(vec1, vec2) {
+  joint_probs <- table(vec1, vec2) / length(vec1)
+  -sum(joint_probs * log2(joint_probs + 1e-9))  # add a small value to avoid log(0)
+}
+
+mutual_information <- function(vec1, vec2) { 
+  H_x <- entropy(vec1) 
+  H_y <- entropy(vec2) 
+  H_xy <- joint_entropy(vec1, vec2) 
+  H_x + H_y - H_xy 
+  }
+
+```
+
+
+
+Type and Sentiment are slightly correlated with each other as some Types appear to have a distinct Sentiment distribution. The chi-squared test statistic is `r round(chi_test$statistic, 2)` with a p-value of `r format.pval(chi_test$p.value, digits = 2, eps = 0.01)`. This indicates that the Sentiment distribution is not uniform across the Type label. The mutual information between Type and Sentiment is `r round(mutual_information(data$Type, data$Sentiment), 2)` which is rather low. This suggests that the Sentiment label does not provide much additional information about the Type label. A multinominial logistic regression model could be used to predict the Type label based on the Sentiment label, but the model would likely not perform well due to the low mutual information between the two labels.
+
+```{r}
+# 
+
+
+require(nnet)
+# Training the multinomial model
+multinom_model <- multinom(Sentiment ~ Type, data = data)
+summary(multinom_model)
+```

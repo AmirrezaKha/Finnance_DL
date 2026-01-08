@@ -1,0 +1,10 @@
+"Metric","Value"
+"Number of rows",3500
+"Number of features",8
+"Number of label columns",2
+"Min classes per label",3
+"Max classes per label",7
+"Average classes per label",5
+"Min labels per instance",2
+"Max labels per instance",2
+"Average labels per instance",2
